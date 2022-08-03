@@ -16,7 +16,7 @@
 .projets-view .editor-layout {
   display: flex;
   flex-direction: column;
-  width: 400px;
+  width: 2200px;
 }
 
 .projets-view .editor {
@@ -41,4 +41,7 @@
 
 .projets-view .grid-wrapper {
   width: 100%;
+}
+
+.projets-view .techsLayout {
 }

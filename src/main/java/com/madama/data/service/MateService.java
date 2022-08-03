@@ -1,31 +1,29 @@
 package com.madama.data.service;
 
-import com.madama.data.entity.Project;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
-import com.madama.data.entity.Technologie;
+import com.madama.data.entity.Mate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ProjectService {
+public class MateService {
 
-    private final ProjectRepository repository;
+    private final MateRepository repository;
 
     @Autowired
-    public ProjectService(ProjectRepository repository) {
+    public MateService(MateRepository repository) {
         this.repository = repository;
     }
 
-    public Optional<Project> get(UUID id) {
+    public Optional<Mate> get(UUID id) {
         return repository.findById(id);
     }
 
-    public Project update(Project entity) {
+    public Mate update(Mate entity) {
         return repository.save(entity);
     }
 
@@ -33,7 +31,7 @@ public class ProjectService {
         repository.deleteById(id);
     }
 
-    public Page<Project> list(Pageable pageable) {
+    public Page<Mate> list(Pageable pageable) {
         return repository.findAll(pageable);
     }
 

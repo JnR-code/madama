@@ -75,16 +75,16 @@ public class MainLayout extends AppLayout {
             nav.addItem(new AppNavItem("Accueil", AccueilView.class, "la la-file"));
 
         }
-        if (accessChecker.hasAccess(TechnologiesView.class)) {
-            nav.addItem(new AppNavItem("Technologies", TechnologiesView.class, "la la-columns"));
-
-        }
         if (accessChecker.hasAccess(ProjetsView.class)) {
             nav.addItem(new AppNavItem("Projets", ProjetsView.class, "la la-columns"));
 
         }
         if (accessChecker.hasAccess(CollaborateursView.class)) {
             nav.addItem(new AppNavItem("Collaborateurs", CollaborateursView.class, "la la-list"));
+
+        }
+        if (accessChecker.hasAccess(TechnologiesView.class)) {
+            nav.addItem(new AppNavItem("Technologies", TechnologiesView.class, "la la-columns"));
 
         }
 

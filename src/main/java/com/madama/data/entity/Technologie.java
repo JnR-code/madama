@@ -1,6 +1,8 @@
 package com.madama.data.entity;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
+import java.util.Set;
 
 @Entity
 public class Technologie extends AbstractEntity {
@@ -28,4 +30,12 @@ public class Technologie extends AbstractEntity {
         this.isLts = isLts;
     }
 
+    @Override
+    public String toString() {
+        return "Technologie{" +
+                "name='" + name + '\'' +
+                ", version='" + version + '\'' +
+                ", isLts=" + isLts +
+                '}';
+    }
 }

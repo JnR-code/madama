@@ -1,6 +1,9 @@
 package com.madama.data.entity;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ManyToMany;
+import java.util.Set;
 
 @Entity
 public class Project extends AbstractEntity {
@@ -10,6 +13,9 @@ public class Project extends AbstractEntity {
     private String phase;
     private String methodo;
     private String client;
+
+    @ManyToMany(fetch= FetchType.EAGER)
+    private Set<Technologie> technologies;
 
     public String getName() {
         return name;
@@ -42,4 +48,11 @@ public class Project extends AbstractEntity {
         this.client = client;
     }
 
+    public Set<Technologie> getTechnologies() {
+        return technologies;
+    }
+
+    public void setTechnologies(Set<Technologie> technologies) {
+        this.technologies = technologies;
+    }
 }

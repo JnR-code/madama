@@ -1,9 +1,11 @@
 package com.madama.data.generator;
 
 import com.madama.data.Role;
+import com.madama.data.entity.Mate;
 import com.madama.data.entity.Project;
 import com.madama.data.entity.Technologie;
 import com.madama.data.entity.User;
+import com.madama.data.service.MateRepository;
 import com.madama.data.service.ProjectRepository;
 import com.madama.data.service.TechnologieRepository;
 import com.madama.data.service.UserRepository;
@@ -24,7 +26,7 @@ public class DataGenerator {
 
     @Bean
     public CommandLineRunner loadData(PasswordEncoder passwordEncoder, UserRepository userRepository,
-            ProjectRepository projectRepository, TechnologieRepository technologieRepository) {
+                                      ProjectRepository projectRepository, TechnologieRepository technologieRepository, MateRepository mateRepository) {
         return args -> {
             Logger logger = LoggerFactory.getLogger(getClass());
             if (userRepository.count() != 0L) {
@@ -69,6 +71,17 @@ public class DataGenerator {
             technologieRepositoryGenerator.setData(Technologie::setVersion, DataType.WORD);
             technologieRepositoryGenerator.setData(Technologie::setIsLts, DataType.BOOLEAN_90_10);
             technologieRepository.saveAll(technologieRepositoryGenerator.create(100, seed));
+
+            logger.info("... generating 100 Mate entities...");
+            ExampleDataGenerator<Mate> mateRepositoryGenerator = new ExampleDataGenerator<>(Mate.class,
+                    LocalDateTime.of(2022, 7, 29, 0, 0, 0));
+            mateRepositoryGenerator.setData(Mate::setFirstName, DataType.FIRST_NAME);
+            mateRepositoryGenerator.setData(Mate::setLastName, DataType.LAST_NAME);
+            mateRepositoryGenerator.setData(Mate::setAvatar, DataType.PROFILE_PICTURE_URL);
+            mateRepositoryGenerator.setData(Mate::setIsActif, DataType.BOOLEAN_90_10);
+            mateRepositoryGenerator.setData(Mate::setPoste, DataType.WORD);
+            mateRepositoryGenerator.setData(Mate::setDateDebut, DataType.DATE_OF_BIRTH);
+            mateRepository.saveAll(mateRepositoryGenerator.create(100, seed));
 
             logger.info("Generated demo data");
         };

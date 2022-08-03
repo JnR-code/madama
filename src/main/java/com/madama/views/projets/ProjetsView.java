@@ -1,7 +1,9 @@
 package com.madama.views.projets;
 
 import com.madama.data.entity.Project;
+import com.madama.data.entity.Technologie;
 import com.madama.data.service.ProjectService;
+import com.madama.data.service.TechnologieRepository;
 import com.madama.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -11,6 +13,9 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -22,8 +27,13 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -47,15 +57,24 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
     private Button cancel = new Button("Cancel");
     private Button save = new Button("Save");
 
+    Button delete = new Button("Delete");
+    Button update = new Button("Update");
+
     private BeanValidationBinder<Project> binder;
 
     private Project project;
 
+    private FormLayout techsLayout;
+    private List<TextField> listTechs = new ArrayList<>();
+    private List<Button> listButton = new ArrayList<>();
+
     private final ProjectService projectService;
+    private final TechnologieRepository technologieRepository;
 
     @Autowired
-    public ProjetsView(ProjectService projectService) {
+    public ProjetsView(ProjectService projectService, TechnologieRepository technologieRepository) {
         this.projectService = projectService;
+        this.technologieRepository = technologieRepository;
         addClassNames("projets-view");
 
         // Create UI
@@ -94,9 +113,17 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
 
         binder.bindInstanceFields(this);
 
+        save.setVisible(false);
+        delete.setVisible(true);
+        cancel.setVisible(false);
+        update.setVisible(true);
+        update.addClickListener(event -> setReadOnly(false));
+        delete.addClickListener(event -> projectService.delete(this.project.getId()));
+
         cancel.addClickListener(e -> {
             clearForm();
             refreshGrid();
+            setReadOnly(true);
         });
 
         save.addClickListener(e -> {
@@ -104,12 +131,15 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
                 if (this.project == null) {
                     this.project = new Project();
                 }
+                setReadOnly(true);
                 binder.writeBean(this.project);
 
                 projectService.update(this.project);
+                saveTechs();
+                technologieRepository.saveAll(this.project.getTechnologies());
+                Notification.show("Project details stored. "+this.project.getTechnologies().toString());
                 clearForm();
                 refreshGrid();
-                Notification.show("Project details stored.");
                 UI.getCurrent().navigate(ProjetsView.class);
             } catch (ValidationException validationException) {
                 Notification.show("An exception happened while trying to store the project details.");
@@ -144,16 +174,21 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
         editorDiv.setClassName("editor");
         editorLayoutDiv.add(editorDiv);
 
+        techsLayout = new FormLayout();
+        techsLayout.setClassName("techsLayout");
         FormLayout formLayout = new FormLayout();
         name = new TextField("Name");
         version = new TextField("Version");
         phase = new TextField("Phase");
         methodo = new TextField("Methodo");
         client = new TextField("Client");
+
         Component[] fields = new Component[]{name, version, phase, methodo, client};
 
         formLayout.add(fields);
+
         editorDiv.add(formLayout);
+        editorDiv.add(techsLayout);
         createButtonLayout(editorLayoutDiv);
 
         splitLayout.addToSecondary(editorLayoutDiv);
@@ -164,7 +199,9 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
         buttonLayout.setClassName("button-layout");
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
+        update.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        buttonLayout.add(save, cancel, update, delete);
         editorLayoutDiv.add(buttonLayout);
     }
 
@@ -182,11 +219,79 @@ public class ProjetsView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        clearTechLayout();
     }
 
     private void populateForm(Project value) {
         this.project = value;
         binder.readBean(this.project);
 
+        clearTechLayout();
+        if (this.project != null){
+            for (Technologie technologie: this.project.getTechnologies()){
+                TextField t1 = new TextField();
+                t1.setValue(technologie.getName());
+                techsLayout.add(t1);
+                listTechs.add(t1);
+            }
+        }
+    }
+
+    private void clearTechLayout(){
+        techsLayout.removeAll();
+        Label label = new Label("Technologies");
+        techsLayout.add(label);
+        Button plusButton = new Button(new Icon(VaadinIcon.PLUS));
+        plusButton.addClickListener(clickEvent -> {
+            addNewTechChoice();
+        });
+        plusButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+        plusButton.getElement().setAttribute("aria-label", "Add item");
+        listButton.add(plusButton);
+        techsLayout.add(plusButton);
+    }
+
+    private void addNewTechChoice(){
+        HorizontalLayout layout = new HorizontalLayout();
+        TextField t1 = new TextField();
+        layout.add(t1);
+        Button minusButton = new Button(new Icon(VaadinIcon.MINUS));
+        minusButton.addClickListener(clickEvent -> {
+            removeTechChoice(layout, t1);
+        });
+        minusButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+        minusButton.getElement().setAttribute("aria-label", "Remove item");
+        layout.add(minusButton);
+        listTechs.add(t1);
+        listButton.add(minusButton);
+        techsLayout.add(layout);
+
+    }
+
+    private void removeTechChoice(HorizontalLayout layout, TextField t1){
+        listTechs.remove(t1);
+        techsLayout.remove(layout);
+    }
+
+    private void saveTechs(){
+        List<String> techsName = listTechs.stream().map(t -> t.getValue()).collect(Collectors.toList());
+    }
+
+    private void setReadOnly(Boolean isReadOnly){
+        update.setVisible(isReadOnly);
+        save.setVisible(!isReadOnly);
+        cancel.setVisible(!isReadOnly);
+        delete.setVisible(isReadOnly);
+        setFieldReadOnly(isReadOnly);
+
+    }
+
+    private void setFieldReadOnly(Boolean isReadOnly){
+        name.setReadOnly(isReadOnly);
+        version.setReadOnly(isReadOnly);
+        phase.setReadOnly(isReadOnly);
+        methodo.setReadOnly(isReadOnly);
+        client.setReadOnly(isReadOnly);
+        listButton.stream().forEach(b -> b.setVisible(!isReadOnly));
     }
 }

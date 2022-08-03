@@ -1,7 +1,9 @@
 package com.madama.data.service;
 
+import com.madama.data.entity.Project;
 import com.madama.data.entity.Technologie;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,5 +39,6 @@ public class TechnologieService {
     public int count() {
         return (int) repository.count();
     }
+
 
 }
